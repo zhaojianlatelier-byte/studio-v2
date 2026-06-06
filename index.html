@@ -9,10 +9,10 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --sky: #C8DCE8;
-    --sky-light: #E0EEF5;
-    --sky-pale: #F0F7FB;
-    --sky-deep: #8AAFC4;
+    --sky: #B8D4E3;
+    --sky-light: #D6E8F2;
+    --sky-pale: #EBF4F9;
+    --sky-deep: #7BAEC8;
     --cream: #FAF7F2;
     --cream-warm: #F3EDE4;
     --ink: #1E2A35;
@@ -33,7 +33,7 @@
 
   /* Header */
   header {
-    background: linear-gradient(160deg, #1E2A35 0%, #2C3E50 100%);
+    background: linear-gradient(160deg, #3D6B8C 0%, #5B8FAD 100%);
     padding: 2.5rem 2rem 2rem;
     text-align: center;
     position: relative;
@@ -157,6 +157,24 @@
     box-shadow: 0 2px 12px rgba(30,42,53,0.05);
   }
 
+  /* Date navigation */
+  .date-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .date-nav-btn {
+    width: 30px; height: 30px;
+    border: 0.5px solid var(--border);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .date-nav-btn:hover:not(:disabled) { border-color: var(--sky-deep); color: var(--sky-deep); background: var(--sky-pale); }
+  .date-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .date-nav-label { font-size: 12px; color: var(--ink-muted); flex: 1; text-align: center; letter-spacing: 0.05em; }
+
   /* Date buttons */
   .date-scroll { display: flex; gap: 8px; flex-wrap: wrap; }
   .date-btn {
@@ -252,7 +270,7 @@
   .submit-btn {
     width: 100%;
     padding: 13px;
-    background: linear-gradient(135deg, #1E2A35 0%, #2C3E50 100%);
+    background: linear-gradient(135deg, #3D6B8C 0%, #5B8FAD 100%);
     color: var(--sky-light);
     border: none;
     border-radius: 12px;
@@ -333,6 +351,11 @@
     <div class="section">
       <div class="section-title">選擇日期與時段</div>
       <div class="card">
+        <div class="date-nav">
+          <button class="date-nav-btn" id="prev-week-btn" onclick="changeWeek(-1)" disabled>&#8249;</button>
+          <div class="date-nav-label" id="week-label"></div>
+          <button class="date-nav-btn" id="next-week-btn" onclick="changeWeek(1)">&#8250;</button>
+        </div>
         <div class="date-scroll" id="date-row"></div>
         <div class="divider"></div>
         <div class="slots-grid" id="slots-grid"></div>
@@ -392,21 +415,50 @@
   const allSlots = [];
   for (let h = 9; h < 17; h++) { allSlots.push(pad(h)+':00'); allSlots.push(pad(h)+':30'); }
 
-  let selectedDate = 0;
+  let selectedDate = null;
   let selectedSlot = null;
   let takenTimes = [];
+  let weekOffset = 0;
+  const MAX_DAYS = 90;
 
   function pad(n) { return n < 10 ? '0'+n : ''+n; }
 
-  function getDates() {
+  function getWeekDates(offset) {
     const result = [], today = new Date();
-    for (let i = 1; result.length < 5; i++) {
+    const startDay = offset * 7 + 1;
+    for (let i = startDay; result.length < 7 && i <= MAX_DAYS; i++) {
       const d = new Date(today); d.setDate(today.getDate()+i);
       if (d.getDay() !== 0) result.push(d);
     }
     return result;
   }
-  const dates = getDates();
+  let dates = getWeekDates(0);
+
+  function changeWeek(dir) {
+    const newOffset = weekOffset + dir;
+    const newDates = getWeekDates(newOffset);
+    if (newDates.length === 0) return;
+    weekOffset = newOffset;
+    dates = newDates;
+    selectedDate = null;
+    selectedSlot = null;
+    renderDates();
+    renderSlots();
+    updateSummary();
+    updateWeekNav();
+  }
+
+  function updateWeekNav() {
+    const prev = document.getElementById('prev-week-btn');
+    const next = document.getElementById('next-week-btn');
+    const label = document.getElementById('week-label');
+    prev.disabled = weekOffset <= 0;
+    const lastDate = dates[dates.length-1];
+    const firstDate = dates[0];
+    label.textContent = (firstDate.getMonth()+1)+'月'+firstDate.getDate()+'日 – '+(lastDate.getMonth()+1)+'月'+lastDate.getDate()+'日';
+    const nextDates = getWeekDates(weekOffset+1);
+    next.disabled = nextDates.length === 0;
+  }
 
   function formatShort(d) {
     const days = ['日','一','二','三','四','五','六'];
@@ -434,9 +486,10 @@
   function renderDates() {
     const row = document.getElementById('date-row');
     row.innerHTML = '';
+    updateWeekNav();
     dates.forEach((d, i) => {
       const btn = document.createElement('button');
-      btn.className = 'date-btn'+(i===selectedDate?' active':'');
+      btn.className = 'date-btn'+(selectedDate===i?' active':'');
       btn.textContent = formatShort(d);
       btn.onclick = async () => {
         selectedDate = i; selectedSlot = null;
@@ -535,18 +588,17 @@
   }
 
   function resetAll() {
+    selectedDate = null;
     selectedSlot = null;
     ['f-name','f-email','f-phone','f-note'].forEach(id => document.getElementById(id).value='');
     document.getElementById('booking-view').style.display='block';
     document.getElementById('confirm-view').style.display='none';
-    updateSummary(); renderSlots(); hideError();
+    updateSummary(); renderDates(); renderSlots(); hideError();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   (async () => {
-    renderDates(); renderSlotsLoading(); updateSummary();
-    takenTimes = await fetchTakenSlots(toDateStr(dates[0]));
-    renderSlots();
+    renderDates(); renderSlots(); updateSummary();
   })();
 </script>
 </body>
