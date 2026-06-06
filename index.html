@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人像攝影工作室 — 線上預約</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F7F4EF; --ink: #1A1815; --ink-soft: #4A4540; --ink-muted: #8A8580;
+    --gold: #B8965A; --gold-light: #D4B07A; --gold-pale: #F0E8D8;
+    --white: #FFFFFF; --border: rgba(26,24,21,0.12); --border-soft: rgba(26,24,21,0.07);
+  }
+  body { font-family: 'Noto Sans TC', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.7; }
+
+  header { background: var(--ink); padding: 2rem 2rem 1.5rem; text-align: center; position: relative; overflow: hidden; }
+  header::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(184,150,90,0.04) 40px, rgba(184,150,90,0.04) 41px); }
+  .header-inner { position: relative; }
+  .studio-name { font-family: 'Noto Serif TC', serif; font-size: clamp(22px,4vw,32px); font-weight: 600; color: var(--gold-light); letter-spacing: 0.12em; margin-bottom: 4px; }
+  .studio-tagline { font-size: 12px; color: rgba(255,255,255,0.45); letter-spacing: 0.2em; text-transform: uppercase; }
+  .header-divider { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 12px 0 4px; }
+  .header-divider span { width: 40px; height: 0.5px; background: var(--gold); opacity: 0.4; display: block; }
+
+  main { max-width: 740px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  .info-bar { display: flex; gap: 12px; margin-bottom: 2rem; flex-wrap: wrap; }
+  .info-chip { background: var(--white); border: 0.5px solid var(--border); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+
+  .section { margin-bottom: 1.5rem; }
+  .section-title { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; font-weight: 500; }
+  .card { background: var(--white); border: 0.5px solid var(--border); border-radius: 16px; padding: 1.5rem; }
+
+  .date-scroll { display: flex; gap: 8px; flex-wrap: wrap; }
+  .date-btn { padding: 8px 16px; border: 0.5px solid var(--border); border-radius: 100px; background: transparent; color: var(--ink-soft); font-size: 13px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .date-btn:hover:not(.active) { border-color: var(--gold); color: var(--gold); }
+  .date-btn.active { background: var(--ink); color: var(--gold-light); border-color: var(--ink); }
+
+  .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 1rem; }
+  .slot { padding: 9px 4px; border: 0.5px solid var(--border); border-radius: 10px; text-align: center; font-size: 13px; cursor: pointer; color: var(--ink); background: var(--white); font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; }
+  .slot:hover:not(.taken):not(.selected):not(.loading) { border-color: var(--gold); color: var(--gold); }
+  .slot.selected { background: var(--ink); color: var(--gold-light); border-color: var(--ink); font-weight: 500; }
+  .slot.taken { background: var(--cream); color: var(--ink-muted); cursor: not-allowed; text-decoration: line-through; border-color: var(--border-soft); }
+  .slot.loading { background: var(--cream); color: var(--ink-muted); cursor: wait; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .legend { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  .divider { height: 0.5px; background: var(--border-soft); margin: 1.25rem 0; }
+
+  .selection-summary { background: var(--gold-pale); border: 0.5px solid rgba(184,150,90,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--ink-soft); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-muted); margin-bottom: 5px; letter-spacing: 0.05em; }
+  .required { color: var(--gold); margin-left: 2px; }
+  .field input, .field textarea { width: 100%; padding: 9px 12px; border: 0.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); background: var(--white); transition: border-color 0.15s; outline: none; }
+  .field input:focus, .field textarea:focus { border-color: var(--gold); }
+  .field textarea { resize: vertical; min-height: 80px; }
+
+  .deposit-note { background: var(--gold-pale); border-left: 2px solid var(--gold); border-radius: 0 10px 10px 0; padding: 10px 14px; font-size: 13px; color: var(--ink-soft); margin: 1.25rem 0; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+
+  .submit-btn { width: 100%; padding: 13px; background: var(--ink); color: var(--gold-light); border: none; border-radius: 12px; font-size: 15px; font-family: 'Noto Serif TC', serif; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .submit-btn:hover:not(:disabled) { background: #2D2A26; }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(212,176,122,0.3); border-top-color: var(--gold-light); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg { background: #FEF0F0; border: 0.5px solid rgba(200,60,60,0.2); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #9B2020; margin-bottom: 12px; display: none; }
+
+  /* Confirmation */
+  .confirm-wrap { text-align: center; padding: 1rem; }
+  .confirm-icon { width: 64px; height: 64px; background: var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+  .confirm-title { font-family: 'Noto Serif TC', serif; font-size: 22px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .confirm-sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 1.5rem; }
+  .confirm-detail { background: var(--cream); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.25rem; text-align: left; margin-bottom: 1.5rem; }
+  .confirm-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border-soft); font-size: 14px; }
+  .confirm-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .confirm-row-label { font-size: 11px; color: var(--ink-muted); margin-bottom: 1px; }
+  .confirm-row-value { color: var(--ink); }
+  .reset-btn { padding: 10px 28px; border: 0.5px solid var(--border); border-radius: 100px; background: transparent; color: var(--ink-soft); font-size: 13px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; transition: all 0.15s; }
+  .reset-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  @media (max-width: 480px) { .slots-grid { grid-template-columns: repeat(3, 1fr); } .card { padding: 1.25rem 1rem; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="studio-name">光影人像工作室</div>
+    <div class="header-divider"><span></span>📷<span></span></div>
+    <div class="studio-tagline">Portrait Photography Studio · Online Booking</div>
+  </div>
+</header>
+
+<main>
+  <div class="info-bar">
+    <div class="info-chip">🕐 週一至週六　09:00 – 17:00</div>
+    <div class="info-chip">👤 一位攝影師　每節 30 分鐘</div>
+    <div class="info-chip">💰 訂金到場現付</div>
+  </div>
+
+  <div id="booking-view">
+    <div class="section">
+      <div class="section-title">選擇日期與時段</div>
+      <div class="card">
+        <div class="date-scroll" id="date-row"></div>
+        <div class="divider"></div>
+        <div class="slots-grid" id="slots-grid"></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--ink);"></div>已選取</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--cream);border:1px solid var(--border);"></div>已預約</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--white);border:1px solid var(--border);"></div>可預約</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">填寫預約資料</div>
+      <div class="card">
+        <div class="selection-summary">
+          📅 <span id="summary-text">尚未選擇時段，請先於上方選取日期與時段</span>
+        </div>
+        <div class="error-msg" id="error-msg"></div>
+        <div class="field"><label>姓名<span class="required">*</span></label><input type="text" id="f-name" placeholder="請輸入您的姓名"></div>
+        <div class="field"><label>電子郵件<span class="required">*</span></label><input type="email" id="f-email" placeholder="確認通知將發送至此信箱"></div>
+        <div class="field"><label>聯絡電話<span class="required">*</span></label><input type="tel" id="f-phone" placeholder="09xx-xxx-xxx"></div>
+        <div class="field"><label>拍攝需求說明</label><textarea id="f-note" placeholder="例如：個人寫真、畢業照、婚紗外拍…請描述您的期望風格或需求"></textarea></div>
+        <div class="deposit-note">⚠️ <span>訂金請於拍攝當天到場時以現金繳付，工作人員將協助確認並開立收據。</span></div>
+        <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">確認預約</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-view" style="display:none;">
+    <div class="section">
+      <div class="section-title">預約確認</div>
+      <div class="card">
+        <div class="confirm-wrap">
+          <div class="confirm-icon">✓</div>
+          <div class="confirm-title">預約成功！</div>
+          <div class="confirm-sub">確認通知已寄送至您的電子郵件，請記得查收。</div>
+          <div class="confirm-detail" id="confirm-detail"></div>
+          <p style="font-size:12px;color:var(--ink-muted);margin-bottom:16px;">如需修改或取消，請提前 24 小時與我們聯絡。</p>
+          <button class="reset-btn" onclick="resetAll()">預約另一個時段</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // ▼▼▼ 部署後請將此處換成你的 Vercel 網址 ▼▼▼
+  const API_BASE = 'https://your-project.vercel.app';
+  // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+  const allSlots = [];
+  for (let h = 9; h < 17; h++) { allSlots.push(pad(h)+':00'); allSlots.push(pad(h)+':30'); }
+
+  let selectedDate = 0;
+  let selectedSlot = null;
+  let takenTimes = [];
+
+  function pad(n) { return n < 10 ? '0'+n : ''+n; }
+
+  function getDates() {
+    const result = [], today = new Date();
+    for (let i = 1; result.length < 5; i++) {
+      const d = new Date(today); d.setDate(today.getDate()+i);
+      if (d.getDay() !== 0) result.push(d);
+    }
+    return result;
+  }
+  const dates = getDates();
+
+  function formatShort(d) {
+    const days = ['日','一','二','三','四','五','六'];
+    return (d.getMonth()+1)+'/'+d.getDate()+'（週'+days[d.getDay()]+'）';
+  }
+  function formatFull(d) {
+    return d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日';
+  }
+  function toDateStr(d) {
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  }
+  function endTime(s) {
+    const [h,m] = s.split(':').map(Number), t = h*60+m+30;
+    return pad(Math.floor(t/60))+':'+pad(t%60);
+  }
+
+  async function fetchTakenSlots(dateStr) {
+    try {
+      const res = await fetch(`${API_BASE}/api/slots?date=${dateStr}`);
+      const data = await res.json();
+      return data.takenTimes || [];
+    } catch { return []; }
+  }
+
+  function renderDates() {
+    const row = document.getElementById('date-row');
+    row.innerHTML = '';
+    dates.forEach((d, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'date-btn'+(i===selectedDate?' active':'');
+      btn.textContent = formatShort(d);
+      btn.onclick = async () => {
+        selectedDate = i; selectedSlot = null;
+        renderDates(); renderSlotsLoading(); updateSummary();
+        takenTimes = await fetchTakenSlots(toDateStr(dates[i]));
+        renderSlots();
+      };
+      row.appendChild(btn);
+    });
+  }
+
+  function renderSlotsLoading() {
+    const grid = document.getElementById('slots-grid');
+    grid.innerHTML = '';
+    allSlots.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'slot loading'; div.textContent = s;
+      grid.appendChild(div);
+    });
+  }
+
+  function renderSlots() {
+    const grid = document.getElementById('slots-grid');
+    grid.innerHTML = '';
+    allSlots.forEach(s => {
+      const isTaken = takenTimes.includes(s);
+      const isSelected = selectedSlot === s;
+      const div = document.createElement('div');
+      div.className = 'slot'+(isTaken?' taken':'')+(isSelected?' selected':'');
+      div.textContent = s;
+      if (!isTaken) div.onclick = () => { selectedSlot = s; renderSlots(); updateSummary(); };
+      grid.appendChild(div);
+    });
+  }
+
+  function updateSummary() {
+    const el = document.getElementById('summary-text');
+    if (selectedSlot) {
+      const d = dates[selectedDate];
+      el.innerHTML = '<strong>'+formatFull(d)+'　'+selectedSlot+' – '+endTime(selectedSlot)+'</strong>';
+    } else {
+      el.textContent = '尚未選擇時段，請先於上方選取日期與時段';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg; el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function hideError() { document.getElementById('error-msg').style.display = 'none'; }
+
+  async function handleSubmit() {
+    hideError();
+    if (!selectedSlot) { showError('請先選擇預約時段'); return; }
+    const name = document.getElementById('f-name').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const phone = document.getElementById('f-phone').value.trim();
+    const note = document.getElementById('f-note').value.trim();
+    if (!name || !email || !phone) { showError('請填寫所有必填欄位（姓名、電子郵件、聯絡電話）'); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> 送出中…';
+
+    const d = dates[selectedDate];
+    try {
+      const res = await fetch(`${API_BASE}/api/booking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, email, phone, note,
+          date: toDateStr(d),
+          time: selectedSlot,
+          timeEnd: endTime(selectedSlot),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showError(data.error || '預約失敗，請稍後再試'); btn.disabled=false; btn.innerHTML='確認預約'; return; }
+
+      // 成功
+      document.getElementById('confirm-detail').innerHTML =
+        dRow('📅','預約日期', formatFull(d)) +
+        dRow('⏰','預約時段', selectedSlot+' – '+endTime(selectedSlot)) +
+        dRow('👤','預約姓名', name) +
+        dRow('📧','電子郵件', email) +
+        dRow('📞','聯絡電話', phone) +
+        (note ? dRow('📝','拍攝需求', note) : '') +
+        dRow('💰','訂金說明','到場現付，工作人員將協助確認');
+
+      document.getElementById('booking-view').style.display = 'none';
+      document.getElementById('confirm-view').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      showError('網路錯誤，請確認連線後再試');
+      btn.disabled = false; btn.innerHTML = '確認預約';
+    }
+  }
+
+  function dRow(icon, label, value) {
+    return `<div class="confirm-row">${icon}<div><div class="confirm-row-label">${label}</div><div class="confirm-row-value">${value}</div></div></div>`;
+  }
+
+  function resetAll() {
+    selectedSlot = null;
+    ['f-name','f-email','f-phone','f-note'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('booking-view').style.display='block';
+    document.getElementById('confirm-view').style.display='none';
+    updateSummary(); renderSlots(); hideError();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // 初始化：載入今天選取日期的時段
+  (async () => {
+    renderDates(); renderSlotsLoading(); updateSummary();
+    takenTimes = await fetchTakenSlots(toDateStr(dates[0]));
+    renderSlots();
+  })();
+</script>
+</body>
+</html>
